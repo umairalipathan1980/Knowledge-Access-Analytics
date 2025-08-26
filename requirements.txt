@@ -1,28 +1,44 @@
-# Core dependencies
+# Core web framework
 streamlit>=1.28.0
+
+# LangChain core packages (minimal set)
 langchain>=0.1.0
 langchain-community>=0.0.20
 langchain-core>=0.1.0
 langchain-chroma>=0.1.0
 langchain-openai>=0.0.8
-langchain-groq>=0.1.0
-langchain-ollama>=0.1.0
-langchain-huggingface>=0.0.3
 langchain-text-splitters>=0.0.1
 langgraph>=0.0.40
 
 # Vector database
 chromadb>=0.4.18
 
-# Document processing
+# Document processing (Azure-only setup)
 docling>=1.0.0
-unstructured>=0.11.0
 PyPDF2>=3.0.1
 
-# Web search
+# Web requests
 requests>=2.31.0
+beautifulsoup4>=4.12.0
 
-# Additional utilities
+# Essential utilities
 python-dotenv>=1.0.0
 pydantic>=2.0.0
 typing-extensions>=4.5.0
+
+# OpenAI client
+openai>=1.0.0
+
+# REMOVED - Heavy unused dependencies:
+# langchain-huggingface>=0.0.3    # Installs torch, transformers, CUDA
+# langchain-groq>=0.1.0           # Not used in Azure setup
+# langchain-ollama>=0.1.0         # Local LLM not used
+# sentence-transformers>=2.2.0    # Heavy ML models
+# transformers>=4.30.0            # Heavy ML library
+# torch>=2.0.0                    # GPU/CUDA libraries
+# spacy>=3.6.0                    # Heavy NLP library
+# unstructured>=0.11.0           # Heavy document processing
+# huggingface-hub>=0.16.0        # Not needed for Azure
+# nltk>=3.8.0                    # Not used
+# tavily-python>=0.3.0           # Web search disabled
+# tesserocr                       # OCR not needed
