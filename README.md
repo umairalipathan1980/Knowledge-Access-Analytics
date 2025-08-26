@@ -16,15 +16,13 @@ A powerful, customizable Retrieval-Augmented Generation (RAG) application that a
 - **Document Grading**: AI-powered relevance scoring of retrieved documents
 
 ### 🤖 **Flexible AI Integration**
-- **Multiple LLM Support**: OpenAI GPT models, Groq, Ollama, and more
-- **Multiple Embedding Models**: OpenAI embeddings, HuggingFace models
 - **Customizable Answer Styles**: Concise, Moderate, or Explanatory responses
 - **Streaming Responses**: Real-time response generation
 
 ### 📊 **User-Friendly Interface**
 - **Streamlit Web Interface**: Clean, intuitive web-based interface
 - **Interactive Chat**: Conversational interface with follow-up questions
-- **Document References**: Clickable citations linking back to source documents
+- **Document References**: Citations linking back to source documents
 - **Debug Information**: Optional debug logs for troubleshooting
 
 ## Installation
@@ -44,8 +42,8 @@ pip install -r requirements.txt
 ```bash
 # Required
 OPENAI_API_KEY=your_openai_api_key
-TAVILY_API_KEY=your_tavily_api_key  # For web search
-GROQ_API_KEY=your_groq_api_key  # Optional, for Groq models
+LANGCHAIN_API_KEY=lsv2_pt_your_langchain_api_key_here
+AZURE_API_KEY=your_azure_openai_api_key_here
 
 # Optional for LangSmith tracing
 LANGCHAIN_TRACING_V2=true
@@ -138,18 +136,10 @@ User Question → Route Decision → Document Retrieval/Web Search → Document 
 
 ### Custom Embeddings
 ```python
-# Supported embedding models:
+# Embedding model:
 - text-embedding-3-large (OpenAI)
-- text-embedding-3-small (OpenAI)  
-- sentence-transformers/all-MiniLM-L6-v2 (HuggingFace)
 ```
 
-### Document Chunking
-```python
-# Default settings:
-CHUNK_SIZE = 3000
-CHUNK_OVERLAP = 200
-```
 
 ### Vector Database
 - Uses Chroma DB for vector storage
@@ -168,11 +158,7 @@ CHUNK_OVERLAP = 200
    - Verify all required API keys are set
    - Check API key permissions and quotas
 
-3. **Memory Issues**:
-   - Reduce chunk size for large documents
-   - Use smaller embedding models for resource-constrained environments
-
-4. **Streamlit Issues**:
+3. **Streamlit Issues**:
    - Clear browser cache
    - Restart the Streamlit server
    - Check port availability (default: 8501)
