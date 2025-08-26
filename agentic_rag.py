@@ -10,9 +10,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import requests
-import spacy
+# import spacy
 import streamlit as st
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 from langchain import hub
 from langchain.chains import RetrievalQA
 from langchain.retrievers import ContextualCompressionRetriever
@@ -24,15 +24,15 @@ from langchain_community.document_loaders import (UnstructuredMarkdownLoader,
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_groq.chat_models import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_ollama import ChatOllama, OllamaEmbeddings
+# from langchain_groq.chat_models import ChatGroq
+# from langchain_huggingface import HuggingFaceEmbeddings
+# from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings, AzureOpenAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+# RecursiveCharacterTextSplitter removed - using Docling HierarchicalChunker instead
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
-from PyPDF2 import PdfReader
-from sentence_transformers import SentenceTransformer, util
+# PyPDF2 removed - using Docling for PDF processing
+# from sentence_transformers import SentenceTransformer, util
 from openai import OpenAI
 from typing_extensions import TypedDict
 from langchain_openai import AzureChatOpenAI
@@ -89,13 +89,11 @@ warnings.filterwarnings("ignore")
 logging.basicConfig(level=logging.INFO)
 ###################################################
 
-# Define paths and parameters
-DATA_FOLDER = 'data'
-persist_directory_openai = 'data/chroma_db_llamaparse-openai'
-persist_directory_huggingface = 'data/chroma_db_llamaparse-huggincface'
+# Legacy paths removed - knowledge base paths now managed by app.py
+# persist_directory_openai = 'data/chroma_db_llamaparse-openai'
+# persist_directory_huggingface = 'data/chroma_db_llamaparse-huggincface'
 collection_name = 'rag'
-CHUNK_SIZE = 3000
-CHUNK_OVERLAP = 200
+# Legacy chunk parameters removed - now using Docling HierarchicalChunker
 
 # Generic RAG prompt suitable for any knowledge base
 generic_rag_prompt = PromptTemplate(
@@ -189,37 +187,7 @@ def get_info(URLs):
             combined_info += f"Error fetching URL {url}: {e}\n\n"
     return combined_info
 
-# @st.cache_data
-def staticChunker(folder_path):
-    docs = []
-    print(
-        f"Creating chunks. CHUNK_SIZE: {CHUNK_SIZE}, CHUNK_OVERLAP: {CHUNK_OVERLAP}")
-
-    # Loop through all .md files in the folder
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith(".md"):
-            file_path = os.path.join(folder_path, file_name)
-            print(f"Processing file: {file_path}")
-
-            # Load documents from the Markdown file
-            loader = UnstructuredMarkdownLoader(file_path)
-            documents = loader.load()
-
-            # Add file-specific metadata (optional)
-            for doc in documents:
-                doc.metadata["source_file"] = file_name
-
-            # Split loaded documents into chunks
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
-            chunked_docs = text_splitter.split_documents(documents)
-
-            docs.extend(chunked_docs)
-            print(
-                f"Loaded {len(documents)} documents and {len(chunked_docs)} chunks from {file_name}")
-
-    print(f"Total documents: {len(docs)}")
-    return docs
+# Legacy staticChunker function removed - now using Docling HierarchicalChunker in pdf_parser.py
 
 
 def load_or_create_vs(persist_directory):
@@ -233,17 +201,9 @@ def load_or_create_vs(persist_directory):
             collection_name=collection_name
         )
     else:
-        print("Creating new vector store...")
-        # Load and chunk documents
-        documents = staticChunker(DATA_FOLDER)
-
-        # Create a new vector store and save to disk
-        vectorstore = Chroma.from_documents(
-            documents=documents,
-            embedding=st.session_state.embed_model,
-            persist_directory=persist_directory,
-            collection_name=collection_name
-        )
+        # Legacy function - this path should not be used anymore
+        # New knowledge bases are created through app.py using DoclingParser
+        raise ValueError("Knowledge base not found. Please create a new knowledge base through the UI.")
 
     return vectorstore
 
@@ -413,29 +373,7 @@ def initialize_llm(model_name, answer_style):
     return st.session_state.llm
 
 
-def initialize_embedding_model(selected_embedding_model):
-    # Check if the embed_model exists in session_state
-    if "embed_model" not in st.session_state:
-        st.session_state.embed_model = None
-
-    # Check if the current model matches the selected one
-    current_model_name = None
-    if st.session_state.embed_model:
-        if hasattr(st.session_state.embed_model, "model"):
-            current_model_name = st.session_state.embed_model.model
-        elif hasattr(st.session_state.embed_model, "model_name"):
-            current_model_name = st.session_state.embed_model.model_name
-
-    # Initialize a new model if it doesn't match the selected one
-    if current_model_name != selected_embedding_model:
-        if "text-" in selected_embedding_model:
-            st.session_state.embed_model = OpenAIEmbeddings(
-                model=selected_embedding_model)
-        else:
-            st.session_state.embed_model = HuggingFaceEmbeddings(
-                model_name=selected_embedding_model)
-
-    return st.session_state.embed_model
+# Legacy initialize_embedding_model function removed - embeddings now handled in initialize_generic_app
 
 # @st.cache_resource
 
@@ -502,14 +440,10 @@ model_list = [
     "deepseek-r1-distill-llama-70b"
 ]
 
+# Legacy embedding model list removed - now using only Azure OpenAI embeddings
 embedding_model_list = [
-    "sentence-transformers/all-MiniLM-L6-v2",
-    "sentence-transformers/all-mpnet-base-v2",
-    "BAAI/bge-small-en-v1.5",
-    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-    "text-embedding-3-small",
-    "text-embedding-3-large",
-    "text-embedding-ada-002"
+    "text-embedding-3-small", 
+    "text-embedding-3-large"
 ]
 
 

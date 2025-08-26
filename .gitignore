@@ -1,6 +1,9 @@
 # Environment variables
 .env
 
+# OpenShift/Kubernetes deployment files with secrets
+openshift/
+
 # Python cache files
 __pycache__/
 *.pyc

@@ -1,7 +1,6 @@
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat
-# from docling.datamodel.pipeline_options import PdfPipelineOptions, TesseractOcrOptions, AcceleratorDevice, AcceleratorOptions
-from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.datamodel.pipeline_options import PdfPipelineOptions, TesseractOcrOptions, AcceleratorDevice, AcceleratorOptions
 
 from docling.chunking import HierarchicalChunker
 from langchain.schema import Document
@@ -19,6 +18,8 @@ except ImportError:
 class DoclingParser:
     def __init__(self):
         self.summaries = summaries.copy()
+        
+        ## Original configuration (commented for potential revert)
         self.pipeline_options = PdfPipelineOptions(
             do_ocr=False,
             do_table_structure=True,
@@ -26,8 +27,8 @@ class DoclingParser:
             generate_page_images=True,
             do_formula_enrichment=True,
             images_scale=2,
-            table_structure_options={"do_cell_matching": True}
-            # accelerator_options=AcceleratorOptions(num_threads=4, device=AcceleratorDevice.CPU),
+            table_structure_options={"do_cell_matching": True},
+            accelerator_options=AcceleratorOptions(num_threads=4, device=AcceleratorDevice.CPU),
         )
         self.format_options = {InputFormat.PDF: PdfFormatOption(pipeline_options=self.pipeline_options)}
         self.converter = DocumentConverter(format_options=self.format_options)
@@ -64,11 +65,61 @@ class DoclingParser:
         Convert PDF to chunks with metadata including document name and page numbers.
         Returns a list of LangChain Document objects with metadata.
         """
+        import psutil
+        import os
+        
+        # Check container memory limits and available memory
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        virtual_memory = psutil.virtual_memory()
+        
         print(f"Processing PDF with metadata extraction: {pdf_path}")
+        # print(f"Container memory stats:")
+        # print(f"  - Process RSS: {memory_info.rss / 1024 / 1024:.1f} MB")
+        # print(f"  - Process VMS: {memory_info.vms / 1024 / 1024:.1f} MB") 
+        # print(f"  - System total: {virtual_memory.total / 1024 / 1024:.1f} MB")
+        # print(f"  - System available: {virtual_memory.available / 1024 / 1024:.1f} MB")
+        # print(f"  - System used: {virtual_memory.used / 1024 / 1024:.1f} MB")
+        # print(f"  - System percentage: {virtual_memory.percent:.1f}%")
+        
+        # Check if running in container with cgroup limits (v1 and v2)
+        try:
+            # Try cgroup v1 first
+            with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'r') as f:
+                cgroup_limit = int(f.read().strip())
+                print(f"  - CGroup v1 memory limit: {cgroup_limit / 1024 / 1024:.1f} MB")
+        except (FileNotFoundError, PermissionError):
+            try:
+                # Try cgroup v2 
+                with open('/sys/fs/cgroup/memory.max', 'r') as f:
+                    cgroup_limit = f.read().strip()
+                    if cgroup_limit != 'max':
+                        print(f"  - CGroup v2 memory limit: {int(cgroup_limit) / 1024 / 1024:.1f} MB")
+                    else:
+                        print("  - CGroup v2 memory limit: unlimited")
+            except (FileNotFoundError, PermissionError):
+                print("  - CGroup limits: Not accessible (normal for non-container env)")
+        
+        try:
+            # Try cgroup v1 usage
+            with open('/sys/fs/cgroup/memory/memory.usage_in_bytes', 'r') as f:
+                cgroup_usage = int(f.read().strip())
+                print(f"  - CGroup v1 memory usage: {cgroup_usage / 1024 / 1024:.1f} MB")
+        except (FileNotFoundError, PermissionError):
+            try:
+                # Try cgroup v2 usage 
+                with open('/sys/fs/cgroup/memory.current', 'r') as f:
+                    cgroup_usage = int(f.read().strip())
+                    print(f"  - CGroup v2 memory usage: {cgroup_usage / 1024 / 1024:.1f} MB")
+            except (FileNotFoundError, PermissionError):
+                pass
         
         # Convert PDF using docling
+        print("Starting Docling conversion...")
         result = self.converter.convert(pdf_path)
         doc = result.document
+        print(f"Docling conversion complete. Pages: {len(doc.pages) if hasattr(doc, 'pages') else 'unknown'}")
+        print(f"Memory usage after conversion: {psutil.Process().memory_info().rss / 1024 / 1024:.1f} MB")
         
         # Initialize chunker
         chunker = HierarchicalChunker()

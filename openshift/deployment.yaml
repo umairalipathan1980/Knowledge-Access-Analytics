@@ -61,25 +61,27 @@ spec:
               optional: true
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "4Gi"      # Request 4GB - within LimitRange constraints
+            cpu: "1000m"       # Request 1 CPU core
           limits:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "8Gi"      # Limit to 8GB - well within 16Gi max
+            cpu: "2000m"       # Limit to 2 CPU cores - within 4 CPU max
         livenessProbe:
           httpGet:
             path: /_stcore/health
             port: 8080
           initialDelaySeconds: 60
-          periodSeconds: 30
-          timeoutSeconds: 10
+          periodSeconds: 60        # Check every 60 seconds instead of 30
+          timeoutSeconds: 30       # Allow 30 seconds for response instead of 10
+          failureThreshold: 3      # Allow 3 failures before restart
         readinessProbe:
           httpGet:
             path: /_stcore/health
             port: 8080
           initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
+          periodSeconds: 30        # Check every 30 seconds instead of 10  
+          timeoutSeconds: 15       # Allow 15 seconds for response instead of 5
+          failureThreshold: 3      # Allow 3 failures before marking unhealthy
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true

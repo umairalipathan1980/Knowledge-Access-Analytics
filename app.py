@@ -1,10 +1,10 @@
-# try:
-#     __import__('pysqlite3')
-#     import sys
-#     sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-#     print("Using pysqlite3 module instead of sqlite3 (Rahti compatible)")
-# except ImportError:
-#     print("pysqlite3 not found, using standard sqlite3 module (local development)")
+try:
+    __import__('pysqlite3')
+    import sys
+    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+    print("Using pysqlite3 module instead of sqlite3 (Rahti compatible)")
+except ImportError:
+    print("pysqlite3 not found, using standard sqlite3 module (local development)")
 
 import io
 import os
@@ -21,9 +21,9 @@ load_dotenv()
 import streamlit as st
 from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+# from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 
 from agentic_rag import initialize_generic_app
@@ -270,76 +270,60 @@ def process_question(question, answer_style):
     st.session_state.messages.append({"role": "assistant", "content": ""})
     assistant_index = len(st.session_state.messages) - 1
 
-    with st.chat_message("assistant"):
-        response_placeholder = st.empty()
-        debug_placeholder = st.empty()
-        st_callback = get_streamlit_cb(st.empty())
+    # Process the question without displaying response here (conversation history will handle display)
+    debug_placeholder = st.empty()
+    st_callback = get_streamlit_cb(st.empty())
 
-        start_time = time.time()
+    start_time = time.time()
 
-        with st.spinner("Thinking..."):
-            inputs = {
-                "question": question,
-                "hybrid_search": st.session_state.get("hybrid_search", False),
-                "internet_search": st.session_state.get("internet_search", False),
-                "answer_style": answer_style
-            }
+    with st.spinner("Thinking..."):
+        inputs = {
+            "question": question,
+            "hybrid_search": st.session_state.get("hybrid_search", False),
+            "internet_search": st.session_state.get("internet_search", False),
+            "answer_style": answer_style
+        }
+        try:
+            for idx, chunk in enumerate(app.stream(inputs, config={"callbacks": [st_callback]})):
+                debug_logs = output_buffer.getvalue()
+                debug_placeholder.text_area(
+                    "Debug Logs", debug_logs, height=100, key=f"debug_logs_{idx}"
+                )
+                if "generate" in chunk and "generation" in chunk["generate"]:
+                    assistant_response += chunk["generate"]["generation"]
+                    # Update the session state in real-time for conversation history display
+                    st.session_state.messages[assistant_index]["content"] = assistant_response
+        except Exception as e:
+            error_str = str(e)
+            if "Bad message format" not in error_str:
+                error_msg = f"Error generating response: {error_str}"
+                st.error(error_msg)
+                st_callback.text = error_msg
+
+        if not assistant_response.strip():
             try:
-                for idx, chunk in enumerate(app.stream(inputs, config={"callbacks": [st_callback]})):
-                    debug_logs = output_buffer.getvalue()
-                    debug_placeholder.text_area(
-                        "Debug Logs", debug_logs, height=100, key=f"debug_logs_{idx}"
-                    )
-                    if "generate" in chunk and "generation" in chunk["generate"]:
-                        assistant_response += chunk["generate"]["generation"]
-                        styled_response = re.sub(
-                            r'\[(.*?)\]',
-                            r'<span class="reference">[\1]</span>',
-                            assistant_response
-                        )
-                        response_placeholder.markdown(
-                            f"**Assistant:** {styled_response}",
-                            unsafe_allow_html=True
-                        )
-            except Exception as e:
-                error_str = str(e)
-                if "Bad message format" not in error_str:
-                    error_msg = f"Error generating response: {error_str}"
-                    response_placeholder.error(error_msg)
-                    st_callback.text = error_msg
+                result = app.invoke(inputs)
+                if "generation" in result:
+                    assistant_response = result["generation"]
+                    # Update session state for conversation history display
+                    st.session_state.messages[assistant_index]["content"] = assistant_response
+                else:
+                    raise ValueError("No generation found in result")
+            except Exception as fallback_error:
+                fallback_str = str(fallback_error)
+                if "Bad message format" not in fallback_str:
+                    print(f"Fallback also failed: {fallback_str}")
+                    if not assistant_response.strip():
+                        error_msg = ("Sorry, I encountered an error while generating a response. "
+                                     "Please try again or select a different model.")
+                        st.error(error_msg)
+                        assistant_response = error_msg
 
-            if not assistant_response.strip():
-                try:
-                    result = app.invoke(inputs)
-                    if "generation" in result:
-                        assistant_response = result["generation"]
-                        styled_response = re.sub(
-                            r'\[(.*?)\]',
-                            r'<span class="reference">[\1]</span>',
-                            assistant_response
-                        )
-                        response_placeholder.markdown(
-                            f"**Assistant:** {styled_response}",
-                            unsafe_allow_html=True
-                        )
-                    else:
-                        raise ValueError("No generation found in result")
-                except Exception as fallback_error:
-                    fallback_str = str(fallback_error)
-                    if "Bad message format" not in fallback_str:
-                        print(f"Fallback also failed: {fallback_str}")
-                        if not assistant_response.strip():
-                            error_msg = ("Sorry, I encountered an error while generating a response. "
-                                         "Please try again or select a different model.")
-                            response_placeholder.error(error_msg)
-                            assistant_response = error_msg
+    end_time = time.time()
+    generation_time = end_time - start_time
+    st.session_state["last_generation_time"] = generation_time
 
-        end_time = time.time()
-        generation_time = end_time - start_time
-        st.session_state["last_generation_time"] = generation_time
-
-
-        sys.stdout = sys.__stdout__
+    sys.stdout = sys.__stdout__
 
     st.session_state.messages[assistant_index]["content"] = assistant_response
     st.session_state.followup_key += 1
@@ -697,21 +681,33 @@ for i, question in enumerate(sample_questions):
         st.rerun()
 
 # -------------------- Display Conversation History --------------------
-for message in st.session_state.messages:
-    if message["role"] == "user":
-        with st.chat_message("user"):
-            st.markdown(f"**You:** {message['content']}")
-    elif message["role"] == "assistant":
-        with st.chat_message("assistant"):
-            styled_response = re.sub(
-                r'\[(.*?)\]',
-                r'<span class="reference">[\1]</span>',
-                message['content']
-            )
-            st.markdown(
-                f"**Assistant:** {styled_response}",
-                unsafe_allow_html=True
-            )
+# Display conversation history, excluding the last two messages if they are currently being processed
+# This prevents duplicate display during real-time streaming
+if len(st.session_state.messages) > 0:
+    # Skip the last two messages (current user question and assistant response) if assistant response is incomplete
+    messages_to_show = st.session_state.messages
+    if (len(messages_to_show) >= 2 and 
+        messages_to_show[-1]["role"] == "assistant" and 
+        messages_to_show[-2]["role"] == "user" and
+        not messages_to_show[-1]["content"].strip()):
+        # Currently processing - show all messages except the last incomplete pair
+        messages_to_show = messages_to_show[:-2]
+    
+    for message in messages_to_show:
+        if message["role"] == "user":
+            with st.chat_message("user"):
+                st.markdown(f"**You:** {message['content']}")
+        elif message["role"] == "assistant" and message["content"].strip():
+            with st.chat_message("assistant"):
+                styled_response = re.sub(
+                    r'\[(.*?)\]',
+                    r'<span class="reference">[\1]</span>',
+                    message['content']
+                )
+                st.markdown(
+                    f"**Assistant:** {styled_response}",
+                    unsafe_allow_html=True
+                )
 
 
 # -------------------- Process Pending Follow-Up --------------------
