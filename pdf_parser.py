@@ -1,6 +1,8 @@
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions, TesseractOcrOptions, AcceleratorDevice, AcceleratorOptions
+# from docling.datamodel.pipeline_options import PdfPipelineOptions, TesseractOcrOptions, AcceleratorDevice, AcceleratorOptions
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+
 from docling.chunking import HierarchicalChunker
 from langchain.schema import Document
 import re
@@ -24,8 +26,8 @@ class DoclingParser:
             generate_page_images=True,
             do_formula_enrichment=True,
             images_scale=2,
-            table_structure_options={"do_cell_matching": True},
-            accelerator_options=AcceleratorOptions(num_threads=4, device=AcceleratorDevice.CPU),
+            table_structure_options={"do_cell_matching": True}
+            # accelerator_options=AcceleratorOptions(num_threads=4, device=AcceleratorDevice.CPU),
         )
         self.format_options = {InputFormat.PDF: PdfFormatOption(pipeline_options=self.pipeline_options)}
         self.converter = DocumentConverter(format_options=self.format_options)

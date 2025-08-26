@@ -1,0 +1,21 @@
+# Constraints file to prevent heavy ML/GPU packages from being installed
+# This works by making pip skip these packages entirely
+
+# Block PyTorch and related
+torch<0.0.1
+torchvision<0.0.1  
+torchaudio<0.0.1
+
+# Block Transformers ecosystem
+transformers<0.0.1
+sentence-transformers<0.0.1
+tokenizers<0.0.1
+
+# Block other ML frameworks
+tensorflow<0.0.1
+jax<0.0.1
+
+# Block NVIDIA packages
+nvidia-ml-py<0.0.1
+nvidia-cuda-runtime-cu11<0.0.1
+nvidia-cuda-runtime-cu12<0.0.1
