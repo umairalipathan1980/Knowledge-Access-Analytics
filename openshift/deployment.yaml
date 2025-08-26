@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-access-analytics
+  labels:
+    app: knowledge-access-analytics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knowledge-access-analytics
+  template:
+    metadata:
+      labels:
+        app: knowledge-access-analytics
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: knowledge-access-analytics
+        image: knowledge-access-analytics:latest
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: STREAMLIT_SERVER_PORT
+          value: "8080"
+        - name: STREAMLIT_SERVER_ADDRESS
+          value: "0.0.0.0"
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: openai-api-key
+              optional: true
+        - name: AZURE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: azure-api-key
+              optional: true
+        - name: LANGCHAIN_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: langchain-api-key
+              optional: true
+        - name: TAVILY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: tavily-api-key
+              optional: true
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: groq-api-key
+              optional: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: data-volume
+          mountPath: /opt/app-root/src/data
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: knowledge-base-storage
