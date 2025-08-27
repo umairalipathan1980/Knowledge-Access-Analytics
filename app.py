@@ -364,7 +364,7 @@ if st.session_state.selected_knowledge_base is None:
     </style>
     """, unsafe_allow_html=True)
     
-    st.markdown("<h1 style='text-align: center;'>🧠 Knowledge Base Manager</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>🧠 Intelligent Knowledge Access</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>Select a knowledge base or create a new one from your documents</p>", unsafe_allow_html=True)
     
     # API Configuration Section

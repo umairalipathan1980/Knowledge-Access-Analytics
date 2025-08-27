@@ -73,7 +73,7 @@ class DoclingParser:
         memory_info = process.memory_info()
         virtual_memory = psutil.virtual_memory()
         
-        print(f"Processing PDF with metadata extraction: {pdf_path}")
+        print(f"Processing document with metadata extraction (this may take a while): {pdf_path}")
         # print(f"Container memory stats:")
         # print(f"  - Process RSS: {memory_info.rss / 1024 / 1024:.1f} MB")
         # print(f"  - Process VMS: {memory_info.vms / 1024 / 1024:.1f} MB") 
@@ -104,22 +104,22 @@ class DoclingParser:
             # Try cgroup v1 usage
             with open('/sys/fs/cgroup/memory/memory.usage_in_bytes', 'r') as f:
                 cgroup_usage = int(f.read().strip())
-                print(f"  - CGroup v1 memory usage: {cgroup_usage / 1024 / 1024:.1f} MB")
+                # print(f"  - CGroup v1 memory usage: {cgroup_usage / 1024 / 1024:.1f} MB")
         except (FileNotFoundError, PermissionError):
             try:
                 # Try cgroup v2 usage 
                 with open('/sys/fs/cgroup/memory.current', 'r') as f:
                     cgroup_usage = int(f.read().strip())
-                    print(f"  - CGroup v2 memory usage: {cgroup_usage / 1024 / 1024:.1f} MB")
+                    # print(f"  - CGroup v2 memory usage: {cgroup_usage / 1024 / 1024:.1f} MB")
             except (FileNotFoundError, PermissionError):
                 pass
         
         # Convert PDF using docling
-        print("Starting Docling conversion...")
+        print("Parsing document(s)...")
         result = self.converter.convert(pdf_path)
         doc = result.document
-        print(f"Docling conversion complete. Pages: {len(doc.pages) if hasattr(doc, 'pages') else 'unknown'}")
-        print(f"Memory usage after conversion: {psutil.Process().memory_info().rss / 1024 / 1024:.1f} MB")
+        print(f"Document parsing complete. Pages: {len(doc.pages) if hasattr(doc, 'pages') else 'unknown'}")
+        # print(f"Memory usage after conversion: {psutil.Process().memory_info().rss / 1024 / 1024:.1f} MB")
         
         # Initialize chunker
         chunker = HierarchicalChunker()
