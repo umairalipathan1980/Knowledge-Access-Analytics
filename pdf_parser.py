@@ -20,16 +20,27 @@ class DoclingParser:
         self.summaries = summaries.copy()
         
         ## Original configuration (commented for potential revert)
+        # self.pipeline_options = PdfPipelineOptions(
+        #     do_ocr=False,
+        #     do_table_structure=True,
+        #     generate_picture_images=True,
+        #     generate_page_images=True,
+        #     do_formula_enrichment=True,
+        #     images_scale=2,
+        #     table_structure_options={"do_cell_matching": True},
+        #     accelerator_options=AcceleratorOptions(num_threads=4, device=AcceleratorDevice.CPU),
+        # )
+
         self.pipeline_options = PdfPipelineOptions(
             do_ocr=False,
             do_table_structure=True,
-            generate_picture_images=True,
-            generate_page_images=True,
+            generate_picture_images=False,
+            generate_page_images=False,
             do_formula_enrichment=True,
-            images_scale=2,
             table_structure_options={"do_cell_matching": True},
             accelerator_options=AcceleratorOptions(num_threads=4, device=AcceleratorDevice.CPU),
         )
+
         self.format_options = {InputFormat.PDF: PdfFormatOption(pipeline_options=self.pipeline_options)}
         self.converter = DocumentConverter(format_options=self.format_options)
 

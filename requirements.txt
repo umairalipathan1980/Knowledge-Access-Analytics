@@ -23,8 +23,9 @@ PyPDF2>=3.0.1
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 
-# OpenAI client
+# OpenAI client and tokenizer
 openai>=1.0.0
+tiktoken>=0.5.0
 
 # Essential utilities  
 python-dotenv>=1.0.0
@@ -32,3 +33,7 @@ pydantic>=2.0.0
 typing-extensions>=4.5.0
 pysqlite3-binary>=0.5.0
 psutil>=5.9.0  # For memory monitoring in containerized environments
+
+# User authentication and data visualization
+pandas>=1.5.0  # For data manipulation in admin dashboard
+plotly>=5.0.0  # For usage visualization charts
